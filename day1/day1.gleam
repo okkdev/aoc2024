@@ -22,8 +22,8 @@ pub fn main() {
 
 fn parse_input(input: String) -> Input {
   input
+  |> string.trim
   |> string.split("\n")
-  |> list.filter(fn(s) { s != "" })
   |> list.fold(Input([], []), fn(acc, l) {
     let assert [a, b] =
       string.split(l, "   ")
