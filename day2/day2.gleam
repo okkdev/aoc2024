@@ -1,23 +1,14 @@
 import gleam/int
 import gleam/io
-import gleam/list.{Continue, Stop}
+import gleam/list
 import gleam/result
 import gleam/string
 import simplifile
 
-pub type Report {
-  Report(state: Safety, direction: Direction)
-}
-
-pub type Safety {
-  Safe
-  Unsafe
-}
-
 pub type Direction {
   Undecided
-  Up
-  Down
+  Ascending
+  Descending
 }
 
 pub fn main() {
@@ -27,9 +18,9 @@ pub fn main() {
   io.println("Part 1:")
   part1(input)
   |> io.debug
-  // io.println("Part 2:")
-  // part2(input)
-  // |> io.debug
+  io.println("Part 2:")
+  part2(input)
+  |> io.debug
 }
 
 fn parse_input(input: String) -> List(List(Int)) {
@@ -43,30 +34,26 @@ fn parse_input(input: String) -> List(List(Int)) {
 }
 
 fn part1(input: List(List(Int))) {
-  input
-  |> list.map(fn(x) {
-    list.window_by_2(x)
-    |> list.fold_until(Report(Safe, Undecided), fn(rep, y) {
-      case rep.direction {
-        Undecided ->
-          case y.1 - y.0 {
-            x if x <= 3 && x > 0 -> Continue(Report(Safe, Up))
-            x if x >= -3 && x < 0 -> Continue(Report(Safe, Down))
-            _ -> Stop(Report(Unsafe, Undecided))
-          }
-        x -> {
-          let step = case x {
-            Up -> y.1 - y.0
-            Down -> y.0 - y.1
-            _ -> 0
-          }
-          case step <= 3 && step > 0 {
-            True -> Continue(Report(..rep, state: Safe))
-            False -> Stop(Report(..rep, state: Unsafe))
-          }
-        }
-      }
-    })
+  list.map(input, check_safe)
+  |> list.count(result.is_ok)
+}
+
+fn part2(input: List(List(Int))) {
+  list.map(input, fn(line) {
+    list.combinations(line, list.length(line) - 1)
+    |> list.any(fn(x) { check_safe(x) |> result.is_ok })
   })
-  |> list.count(fn(x) { x.state == Safe })
+  |> list.count(fn(x) { x == True })
+}
+
+fn check_safe(line: List(Int)) {
+  list.window_by_2(line)
+  |> list.try_fold(Undecided, fn(state, x) {
+    let y = x.1 - x.0
+    case state {
+      Undecided | Ascending if y <= 3 && y > 0 -> Ok(Ascending)
+      Undecided | Descending if y >= -3 && y < 0 -> Ok(Descending)
+      _ -> Error(Nil)
+    }
+  })
 }
