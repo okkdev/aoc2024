@@ -1,6 +1,6 @@
 import gleam/int
 import gleam/io
-import gleam/list
+import gleam/list.{Continue, Stop}
 import gleam/result
 import gleam/string
 import simplifile
@@ -41,9 +41,14 @@ fn part1(input: List(List(Int))) {
 fn part2(input: List(List(Int))) {
   list.map(input, fn(line) {
     list.combinations(line, list.length(line) - 1)
-    |> list.any(fn(x) { check_safe(x) |> result.is_ok })
+    |> list.fold_until(Error(Nil), fn(_, x) {
+      case check_safe(x) {
+        Ok(_) -> Stop(Ok(Nil))
+        Error(_) -> Continue(Error(Nil))
+      }
+    })
   })
-  |> list.count(fn(x) { x == True })
+  |> list.count(result.is_ok)
 }
 
 fn check_safe(line: List(Int)) {
