@@ -1,9 +1,7 @@
 import gleam/bit_array
 import gleam/int
 import gleam/io
-import gleam/list
 import gleam/result
-import gleam/string
 import simplifile
 
 pub fn main() {
@@ -64,10 +62,6 @@ fn part2(input: BitArray, enabled: Bool) -> Int {
       part2(res, enabled)
     }
   }
-}
-
-fn solve(input: BitArray) -> Int {
-  todo
 }
 
 fn bit_to_int(bit_array: BitArray) -> Int {
