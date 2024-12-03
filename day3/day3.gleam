@@ -8,16 +8,16 @@ pub fn main() {
   let assert Ok(raw_input) = simplifile.read("src/day3/input.txt")
   let input = raw_input |> bit_array.from_string
   io.println("Part 1:")
-  part1(input)
+  part1(input, 0)
   |> io.debug
   io.println("Part 2:")
-  part2(input, True)
+  part2(input, True, 0)
   |> io.debug
 }
 
-fn part1(input: BitArray) -> Int {
+fn part1(input: BitArray, acc: Int) -> Int {
   case input {
-    <<>> -> 0
+    <<>> -> acc
     <<"mul(", a:bytes-size(1), ",", b:bytes-size(1), ")", res:bytes>>
     | <<"mul(", a:bytes-size(1), ",", b:bytes-size(2), ")", res:bytes>>
     | <<"mul(", a:bytes-size(2), ",", b:bytes-size(1), ")", res:bytes>>
@@ -29,20 +29,20 @@ fn part1(input: BitArray) -> Int {
     | <<"mul(", a:bytes-size(3), ",", b:bytes-size(3), ")", res:bytes>> -> {
       let a = bit_to_int(a)
       let b = bit_to_int(b)
-      a * b + part1(res)
+      part1(res, acc + a * b)
     }
     _ -> {
       let assert <<_:bytes-size(1), res:bytes>> = input
-      part1(res)
+      part1(res, acc)
     }
   }
 }
 
-fn part2(input: BitArray, enabled: Bool) -> Int {
+fn part2(input: BitArray, enabled: Bool, acc: Int) -> Int {
   case enabled, input {
-    _, <<>> -> 0
-    _, <<"do()", res:bytes>> -> part2(res, True)
-    _, <<"don't()", res:bytes>> -> part2(res, False)
+    _, <<>> -> acc
+    _, <<"do()", res:bytes>> -> part2(res, True, acc)
+    _, <<"don't()", res:bytes>> -> part2(res, False, acc)
     True, <<"mul(", a:bytes-size(1), ",", b:bytes-size(1), ")", res:bytes>>
     | True, <<"mul(", a:bytes-size(1), ",", b:bytes-size(2), ")", res:bytes>>
     | True, <<"mul(", a:bytes-size(2), ",", b:bytes-size(1), ")", res:bytes>>
@@ -55,11 +55,11 @@ fn part2(input: BitArray, enabled: Bool) -> Int {
     -> {
       let a = bit_to_int(a)
       let b = bit_to_int(b)
-      a * b + part2(res, enabled)
+      part2(res, enabled, acc + a * b)
     }
     _, _ -> {
       let assert <<_:bytes-size(1), res:bytes>> = input
-      part2(res, enabled)
+      part2(res, enabled, acc)
     }
   }
 }
