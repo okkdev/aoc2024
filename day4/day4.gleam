@@ -1,3 +1,4 @@
+import gleam/bool
 import gleam/dict
 import gleam/int
 import gleam/io
@@ -14,6 +15,9 @@ pub fn main() {
   let input = parse_input(raw_input)
   io.println("Part 1:")
   part1(input)
+  |> io.debug
+  io.println("Part 2:")
+  part2(input)
   |> io.debug
 }
 
@@ -52,12 +56,31 @@ fn part1(input: Input) {
   horizontal + vertical + r_diagonal + l_diagonal
 }
 
+fn part2(input: Input) {
+  let cords = add_cords(input)
+  let d = dict.from_list(cords)
+
+  list.fold(cords, 0, fn(acc, x) {
+    use <- bool.guard(x.1 != "A", acc)
+    let c = x.0
+    let tl = dict.get(d, #(c.0 - 1, c.1 - 1))
+    let tr = dict.get(d, #(c.0 + 1, c.1 - 1))
+    let bl = dict.get(d, #(c.0 - 1, c.1 + 1))
+    let br = dict.get(d, #(c.0 + 1, c.1 + 1))
+    case tl, tr, bl, br {
+      Ok("M"), Ok("M"), Ok("S"), Ok("S")
+      | Ok("S"), Ok("S"), Ok("M"), Ok("M")
+      | Ok("M"), Ok("S"), Ok("M"), Ok("S")
+      | Ok("S"), Ok("M"), Ok("S"), Ok("M")
+      -> acc + 1
+      _, _, _, _ -> acc
+    }
+  })
+}
+
 fn diagonals(input: List(List(String))) {
   let cords =
-    list.index_map(input, fn(l, i) {
-      list.index_map(l, fn(v, j) { #(#(j, i), v) })
-    })
-    |> list.flatten
+    add_cords(input)
     |> dict.from_list
 
   let size = list.length(input) - 1
@@ -78,6 +101,13 @@ fn diagonals(input: List(List(String))) {
   |> list.map(fn(x) {
     list.map(x, fn(c) { dict.get(cords, c) |> result.unwrap("") })
   })
+}
+
+fn add_cords(input: Input) {
+  list.index_map(input, fn(l, i) {
+    list.index_map(l, fn(v, j) { #(#(j, i), v) })
+  })
+  |> list.flatten
 }
 
 fn count_xmas(line: List(String), count: Int) -> Int {
