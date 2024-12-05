@@ -1,5 +1,5 @@
 import gleam/bool
-import gleam/dict.{type Dict}
+import gleam/dict
 import gleam/int
 import gleam/io
 import gleam/list
@@ -51,9 +51,11 @@ fn part1(input: Input) {
   satisfy(input)
   |> list.filter_map(fn(x) {
     case x {
-      Ok(x) -> {
-        get_center(x)
-      }
+      Ok(x) ->
+        dict.to_list(x)
+        |> list.sort(fn(a, b) { int.compare(a.1, b.1) })
+        |> list.map(fn(a) { a.0 })
+        |> get_center
       _ -> Error(Nil)
     }
   })
@@ -76,22 +78,11 @@ fn part2(input: Input) {
           let b = list.drop(b, 1)
           list.flatten([a, [p], behind, b])
         })
-        |> list.index_map(fn(x, i) { #(x, i) })
-        |> dict.from_list
         |> get_center
       }
     }
   })
   |> int.sum
-}
-
-fn get_center(value_index: Dict(Int, Int)) {
-  let index_value =
-    dict.to_list(value_index)
-    |> list.map(fn(y) { #(y.1, y.0) })
-    |> dict.from_list
-  let i = dict.size(index_value) / 2
-  dict.get(index_value, i)
 }
 
 fn satisfy(input: Input) {
@@ -111,4 +102,12 @@ fn satisfy(input: Input) {
       }
     })
   })
+}
+
+fn get_center(l: List(Int)) {
+  let l =
+    list.index_map(l, fn(y, i) { #(i, y) })
+    |> dict.from_list
+  let i = dict.size(l) / 2
+  dict.get(l, i)
 }
