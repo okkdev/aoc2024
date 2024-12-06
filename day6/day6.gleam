@@ -71,8 +71,10 @@ fn part1(map: Map, pos: Position) {
 }
 
 fn part2(map: Map, pos: Position) {
-  dict.to_list(map)
-  |> list.filter(fn(f) { f.1 == Empty })
+  do_walk(map, pos, Up, dict.from_list([]))
+  |> result.unwrap(dict.from_list([]))
+  |> dict.to_list()
+  |> list.filter(fn(f) { f.1 == Walked || f.1 == WalkedAgain })
   |> list.map(fn(f) {
     task.async(fn() {
       dict.insert(map, f.0, Blocked)
