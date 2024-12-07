@@ -14,18 +14,16 @@ type Direction {
 }
 
 type Field {
-  Guard
   Empty
   Blocked
   Walked
-  WalkedAgain
 }
 
 type Map =
   Dict(#(Int, Int), Field)
 
 type Log =
-  Dict(#(Int, Int), #(Field, Direction))
+  Dict(#(Int, Int), Direction)
 
 type Position =
   #(Int, Int)
@@ -51,14 +49,14 @@ fn parse_input(raw_input: String) {
       |> list.index_map(fn(field, x) {
         #(#(x, y), case field {
           "#" -> Blocked
-          "^" -> Guard
+          "^" -> Walked
           _ -> Empty
         })
       })
     })
     |> list.flatten
 
-  let assert Ok(field) = list.find(map, fn(field) { field.1 == Guard })
+  let assert Ok(field) = list.find(map, fn(field) { field.1 == Walked })
 
   #(dict.from_list(map), field.0)
 }
@@ -67,14 +65,14 @@ fn part1(map: Map, pos: Position) {
   do_walk(map, pos, Up, dict.from_list([]))
   |> result.unwrap(dict.from_list([]))
   |> dict.values
-  |> list.count(fn(field) { field == Walked || field == WalkedAgain })
+  |> list.count(fn(field) { field == Walked })
 }
 
 fn part2(map: Map, pos: Position) {
   do_walk(map, pos, Up, dict.from_list([]))
   |> result.unwrap(dict.from_list([]))
   |> dict.to_list()
-  |> list.filter(fn(f) { f.1 == Walked || f.1 == WalkedAgain })
+  |> list.filter(fn(f) { f.1 == Walked })
   |> list.map(fn(f) {
     task.async(fn() {
       dict.insert(map, f.0, Blocked)
@@ -91,19 +89,12 @@ fn do_walk(
   dir: Direction,
   log: Log,
 ) -> Result(Map, Nil) {
-  let circle = dict.get(log, pos) == Ok(#(WalkedAgain, dir))
+  let circle = dict.get(log, pos) == Ok(dir)
 
   case circle, dict.get(map, pos) {
-    False, Ok(Empty) | False, Ok(Guard) ->
+    False, Ok(Empty) | False, Ok(Walked) ->
       dict.insert(map, pos, Walked)
-      |> do_walk(move(pos, dir), dir, dict.insert(log, pos, #(Walked, dir)))
-    False, Ok(Walked) | False, Ok(WalkedAgain) ->
-      dict.insert(map, pos, WalkedAgain)
-      |> do_walk(
-        move(pos, dir),
-        dir,
-        dict.insert(log, pos, #(WalkedAgain, dir)),
-      )
+      |> do_walk(move(pos, dir), dir, dict.insert(log, pos, dir))
     False, Ok(Blocked) -> {
       let new_dir = switch_dir(dir)
       do_walk(map, move_back(pos, dir) |> move(new_dir), new_dir, log)
