@@ -8,20 +8,21 @@ import simplifile
 type Input =
   List(#(Int, List(Int)))
 
-type Value {
+type Operation {
   Add
   Mul
+  Conc
 }
 
 pub fn main() {
-  let assert Ok(raw_input) = simplifile.read("src/day7/input.txt")
+  let assert Ok(raw_input) = simplifile.read("src/day7/test.txt")
   let input = parse_input(raw_input)
   io.println("Part 1:")
   part1(input)
   |> io.debug
-  // io.println("Part 2:")
-  // part2(map, pos)
-  // |> io.debug
+  io.println("Part 2:")
+  part2(input)
+  |> io.debug
 }
 
 fn parse_input(raw_input: String) {
@@ -37,29 +38,42 @@ fn parse_input(raw_input: String) {
 }
 
 fn part1(input: Input) {
+  solve(input, [Add, Mul])
+}
+
+fn part2(input: Input) {
+  solve(input, [Add, Mul, Conc])
+}
+
+fn solve(input: Input, operators: List(Operation)) {
   input
   |> list.map(fn(line) {
     let #(control, values) = line
     let assert [first, ..rest] = values
-    product([Add, Mul], list.length(values) - 1)
+    product(operators, list.length(values) - 1)
     |> list.fold_until(0, fn(_acc, ops) {
-      let res =
-        list.zip(ops, rest)
-        |> list.fold(first, fn(acc, on) {
-          let #(op, num) = on
-          case op {
-            Add -> acc + num
-            Mul -> acc * num
-          }
-        })
-
-      case res == control {
+      let res = check(ops, rest, first)
+      case control == res {
         True -> Stop(res)
         False -> Continue(0)
       }
     })
   })
   |> int.sum
+}
+
+fn check(ops: List(Operation), values: List(Int), acc: Int) {
+  case ops, values {
+    [Add, ..ops], [n, ..rest] -> check(ops, rest, acc + n)
+    [Mul, ..ops], [n, ..rest] -> check(ops, rest, acc * n)
+    [Conc, ..ops], [n, ..rest] -> {
+      let n =
+        int.parse(int.to_string(acc) <> int.to_string(n))
+        |> result.unwrap(0)
+      check(ops, rest, n)
+    }
+    _, _ -> acc
+  }
 }
 
 fn product(a: List(a), size: Int) {
